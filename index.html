@@ -169,8 +169,8 @@
     <!-- カメラ起動用の隠しinput -->
     <input type="file" id="camera-input" accept="image/*" capture="environment">
     
-    <!-- 画像合成用の非表示キャンバス -->
-    <canvas id="share-canvas" width="1200" height="1200"></canvas>
+    <!-- 画像合成用の非表示キャンバス（ロゴの高さ分を考慮して縦長に調整） -->
+    <canvas id="share-canvas" width="1200" height="1350"></canvas>
 
     <script>
         // ビンゴのワード候補（動植物・自然）
@@ -266,24 +266,25 @@
         async function shareBingoCard() {
             const canvas = document.getElementById('share-canvas');
             const ctx = canvas.getContext('2d');
-            const size = 1200; // 出力画像の解像度
-            canvas.width = size;
-            canvas.height = size;
+            const width = 1200; 
+            const height = 1350; // 全体の高さをロゴスペース分（150px）追加
+            canvas.width = width;
+            canvas.height = height;
 
             // 1. 背景（薄いグリーン）を描画
             ctx.fillStyle = '#f4f7f6';
-            ctx.fillRect(0, 0, size, size);
+            ctx.fillRect(0, 0, width, height);
 
             // 2. ヘッダー（タイトル）を描画
             ctx.fillStyle = '#2e7d32';
             ctx.font = 'bold 50px serif';
             ctx.textAlign = 'center';
-            ctx.fillText('明石公園発見ビンゴ', size / 2, 80);
+            ctx.fillText('明石公園発見ビンゴ', width / 2, 80);
 
             // 3. グリッドの描画設定
             const padding = 100;
             const topOffset = 140;
-            const availableSize = size - (padding * 2);
+            const availableSize = width - (padding * 2);
             const cellSize = (availableSize - (2 * 20)) / 3; // 20pxは隙間
             const gap = 20;
 
@@ -346,7 +347,33 @@
                 ctx.fillText(cell.word, x + cellSize / 2, y + cellSize - 37);
             }
 
-            // 5. 画像の書き出しとシェア/ダウンロード処理
+            // 5. ロゴ画像（logo.png）をキャンバス下部の中央に描画
+            await new Promise((resolve) => {
+                const logoImg = new Image();
+                
+                // Canvas機能を使って画像を書き出す際に、「異なるオリジン（外部ドメインや別サーバー）にある画像」を
+                // キャンバスに読み込ませて描画したことが発生する問題の対応。
+                logoImg.crossOrigin = 'anonymous';
+                
+                logoImg.onload = () => {
+                    // ロゴの描画サイズ（画面上のCSS表示幅250pxをキャンバスの解像度比率に合わせて拡大。例: 幅500pxに設定）
+                    const logoW = 500;
+                    const logoH = (logoImg.height / logoImg.width) * logoW; // 比率を維持
+                    const logoX = (width - logoW) / 2;
+                    // グリッドの下端から少し余白を空けた位置に配置
+                    const logoY = topOffset + (cellSize * 3) + (gap * 2) + 20;
+
+                    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+                    resolve();
+                };
+                logoImg.onerror = () => {
+                    // 万が一ロゴの読み込みに失敗しても処理が止まらないようにする
+                    resolve();
+                };
+                logoImg.src = 'logo.png';
+            });
+
+            // 6. 画像の書き出しとシェア/ダウンロード処理
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], "nature-bingo.jpg", { type: "image/jpeg" });
 
