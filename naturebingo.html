@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自然の写真ビンゴ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #666;
+            margin-top: 0;
+        }
+
+        /* ビンゴカードのグリッド (3x3) */
+        .bingo-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        /* 各マス */
+        .cell {
+            background-color: #ffffff;
+            border: 2px solid #c8e6c9;
+            border-radius: 12px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.1s, background-color 0.2s;
+            user-select: none;
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .cell.completed {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .cell span {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* 撮影された写真のプレビュー */
+        .cell img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* ビンゴ達成時のメッセージ */
+        #bingo-message {
+            font-size: 28px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin: 15px 0;
+            display: none;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+
+        /* ボタン群のスタイル */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+
+        .share-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+        .share-btn:hover {
+            background-color: #f57c00;
+        }
+
+        .reset-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+        .reset-btn:hover {
+            background-color: #388e3c;
+        }
+
+        /* 非表示の要素 */
+        #camera-input {
+            display: none;
+        }
+        #share-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🌳 自然の写真ビンゴ 📸</h1>
+    <p>マスをタップしてカメラで写真を撮ろう！</p>
+
+    <div id="bingo-message">🎉 ビンゴ達成！おめでとう！ 🎉</div>
+
+    <!-- 3x3のビンゴボード -->
+    <div class="bingo-board" id="board"></div>
+
+    <div class="button-group">
+        <button class="share-btn" onclick="shareBingoCard()">🖼️ 画像をシェア・保存する</button>
+        <button class="reset-btn" onclick="resetGame()">はじめからやり直す</button>
+    </div>
+
+    <!-- カメラ起動用の隠しinput -->
+    <input type="file" id="camera-input" accept="image/*" capture="environment">
+    
+    <!-- 画像合成用の非表示キャンバス -->
+    <canvas id="share-canvas" width="1200" height="1200"></canvas>
+
+    <script>
+        // ビンゴのワード候補（動植物・自然）
+        const wordsPool = [
+            "どんぐり", "猫", "犬", "赤い花", "黄色い花", 
+            "鳥", "落ち葉", "石ころ", "木の幹", "虫", 
+            "雲", "水たまり", "クモの巣", "蝶", "松ぼっくり"
+        ];
+
+        let boardData = []; 
+        let activeCellIndex = null; 
+
+        const boardElement = document.getElementById('board');
+        const cameraInput = document.getElementById('camera-input');
+        const bingoMessage = document.getElementById('bingo-message');
+
+        function initGame() {
+            bingoMessage.style.display = 'none';
+            const shuffledWords = [...wordsPool].sort(() => 0.5 - Math.random());
+            const selectedWords = shuffledWords.slice(0, 9);
+
+            boardData = selectedWords.map(word => ({
+                word: word,
+                image: null,
+                completed: false
+            }));
+
+            renderBoard();
+        }
+
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            boardData.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = `cell ${cell.completed ? 'completed' : ''}`;
+                
+                const span = document.createElement('span');
+                span.textContent = cell.word;
+                cellDiv.appendChild(span);
+
+                if (cell.image) {
+                    const img = document.createElement('img');
+                    img.src = cell.image;
+                    cellDiv.appendChild(img);
+                }
+
+                cellDiv.addEventListener('click', () => {
+                    activeCellIndex = index;
+                    cameraInput.click();
+                });
+
+                boardElement.appendChild(cellDiv);
+            });
+
+            checkBingo();
+        }
+
+        cameraInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && activeCellIndex !== null) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    boardData[activeCellIndex].image = e.target.result;
+                    boardData[activeCellIndex].completed = true;
+                    renderBoard();
+                };
+                reader.readAsDataURL(file);
+            }
+            cameraInput.value = '';
+        });
+
+        function checkBingo() {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+                [0, 4, 8], [2, 4, 6]            
+            ];
+
+            let isBingo = false;
+            lines.forEach(line => {
+                const [a, b, c] = line;
+                if (boardData[a].completed && boardData[b].completed && boardData[c].completed) {
+                    isBingo = true;
+                }
+            });
+
+            if (isBingo) {
+                bingoMessage.style.display = 'block';
+            }
+        }
+
+        // --- 1枚の画像に合成してシェア・保存する機能 ---
+        async function shareBingoCard() {
+            const canvas = document.getElementById('share-canvas');
+            const ctx = canvas.getContext('2d');
+            const size = 1200; // 出力画像の解像度
+            canvas.width = size;
+            canvas.height = size;
+
+            // 1. 背景（薄いグリーン）を描画
+            ctx.fillStyle = '#f4f7f6';
+            ctx.fillRect(0, 0, size, size);
+
+            // 2. ヘッダー（タイトル）を描画
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = 'bold 50px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌳 自然の写真ビンゴ 📸', size / 2, 80);
+
+            // 3. グリッドの描画設定
+            const padding = 100;
+            const topOffset = 140;
+            const availableSize = size - (padding * 2);
+            const cellSize = (availableSize - (2 * 20)) / 3; // 20pxは隙間
+            const gap = 20;
+
+            // 4. 各セルの描画を非同期で処理（画像の読み込みを待つため）
+            for (let i = 0; i < 9; i++) {
+                const row = Math.floor(i / 3);
+                const col = i % 3;
+                const x = padding + col * (cellSize + gap);
+                const y = topOffset + row * (cellSize + gap);
+
+                const cell = boardData[i];
+
+                // セルの背景
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.roundRect(x, y, cellSize, cellSize, 20);
+                ctx.fill();
+                ctx.strokeStyle = cell.completed ? '#4caf50' : '#c8e6c9';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // 写真がある場合は描画
+                if (cell.image) {
+                    await new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            // 画像をセルのサイズに合わせて中央トリミングっぽく描画
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.roundRect(x, y, cellSize, cellSize, 20);
+                            ctx.clip();
+                            
+                            // 簡易的なcoverフィット計算
+                            let iw = img.width;
+                            let ih = img.height;
+                            let scale = Math.max(cellSize / iw, cellSize / ih);
+                            let nw = iw * scale;
+                            let nh = ih * scale;
+                            let nx = x + (cellSize - nw) / 2;
+                            let ny = y + (cellSize - nh) / 2;
+                            
+                            ctx.drawImage(img, nx, ny, nw, nh);
+                            ctx.restore();
+                            resolve();
+                        };
+                        img.src = cell.image;
+                    });
+                }
+
+                // ワードラベル（文字）を描画
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.roundRect(x + 15, y + cellSize - 60, cellSize - 30, 45, 10);
+                ctx.fill();
+
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 26px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(cell.word, x + cellSize / 2, y + cellSize - 37);
+            }
+
+            // 5. 画像の書き出しとシェア/ダウンロード処理
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], "nature-bingo.jpg", { type: "image/jpeg" });
+
+                // Web Share API（スマホなどで他アプリに直接シェアできる機能）が使えるか確認
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: '自然の写真ビンゴ',
+                            text: '自然の写真ビンゴを遊んだよ！',
+                            files: [file],
+                        });
+                        return;
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.log('シェアがキャンセルされました、または失敗しました');
+                        }
+                    }
+                }
+
+                // Web Shareが使えない場合や拒否された場合は、通常ダウンロードさせる
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'nature-bingo.jpg';
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/jpeg', 0.9);
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
