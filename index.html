@@ -33,6 +33,12 @@
             max-width: 400px;
             margin: 20px auto;
         }
+        
+        .logo {
+            display: block;
+            width: 250px;
+            margin: 10px auto 0;
+        }
 
         /* 各マス */
         .cell {
@@ -144,7 +150,7 @@
 <body>
 
     <h1>明石公園発見ビンゴ</h1>
-    <p>マスをタップしてカメラでお題にあった写真を撮ろう。<br>
+    <p>マスをタップしてお題にあった写真を撮ろう。<br>
     ９マスのコンプリートを目指そう！</p>
 
     <div id="bingo-message">🎉 ビンゴ達成！おめでとう！ 🎉</div>
@@ -155,6 +161,9 @@
     <div class="button-group">
         <button class="share-btn" onclick="shareBingoCard()">🖼️ 画像をシェア・保存する</button>
         <button class="reset-btn" onclick="resetGame()">はじめからやり直す</button>
+    </div>
+    <div>
+        <img src="logo.png" alt="ロゴ" class="logo">
     </div>
 
     <!-- カメラ起動用の隠しinput -->
@@ -269,7 +278,7 @@
             ctx.fillStyle = '#2e7d32';
             ctx.font = 'bold 50px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('🌳 自然の写真ビンゴ 📸', size / 2, 80);
+            ctx.fillText('明石公園発見ビンゴ', size / 2, 80);
 
             // 3. グリッドの描画設定
             const padding = 100;
