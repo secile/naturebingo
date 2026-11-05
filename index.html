@@ -234,7 +234,9 @@
                 boardElement.appendChild(cellDiv);
             });
 
-            checkBingo();
+            // 縦横斜めではなく、すべてそろったらメッセージ表示。
+            //checkBingo();
+            checkPerfect();
         }
 
         cameraInput.addEventListener('change', (event) => {
@@ -267,10 +269,19 @@
             });
 
             if (isBingo) {
-                //bingoMessage.style.display = 'block';
+                bingoMessage.style.display = 'block';
             }
         }
 
+        function checkPerfect() {
+            // 9つのマスすべてが完了している（completed が true）かどうかをチェック
+            const allCompleted = boardData.every(cell => cell && cell.completed);
+
+            if (allCompleted) {
+                bingoMessage.style.display = 'block';
+            }
+        }
+        
         // --- 1枚の画像に合成してシェア・保存する機能 ---
         async function shareBingoCard() {
             const canvas = document.getElementById('share-canvas');
