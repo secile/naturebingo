@@ -404,7 +404,9 @@
         }
 
         function resetGame() {
-            initGame();
+            if (window.confirm("本当にやり直しますか？\n（撮影した写真がリセットされます）")) {
+                initGame();
+            }
         }
 
         initGame();
