@@ -146,6 +146,15 @@
             display: none;
         }
     </style>
+    
+    <!-- 確認用ダイアログ -->
+    <dialog id="confirm-dialog" style="padding: 20px; border-radius: 12px; border: 2px solid #4caf50;">
+        <p style="font-weight: bold; margin-bottom: 20px;">本当に最初からやり直しますか？<br>（撮影した写真がリセットされます）</p>
+        <div style="display: flex; justify-content: center; gap: 10px;">
+            <button onclick="onConfirmYes()" style="background-color: #4caf50; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">はい</button>
+            <button onclick="onConfirmNo()" style="background-color: #ccc; color: #333; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">いいえ</button>
+        </div>
+    </dialog>
 </head>
 <body>
 
@@ -402,11 +411,24 @@
                 URL.revokeObjectURL(url);
             }, 'image/jpeg', 0.9);
         }
-
+        
+        const dialog = document.getElementById('confirm-dialog');
+        
+        // やり直すボタンを押した時に呼ばれる。
         function resetGame() {
-            if (window.confirm("本当にやり直しますか？\n（撮影した写真がリセットされます）")) {
-                initGame();
-            }
+            // ダイアログを表示する
+            dialog.showModal();
+        }
+
+        // ダイアログの「はい」選択時に呼ばれる。
+        function onConfirmYes() {
+            dialog.close();
+            initGame();
+        }
+
+        // ダイアログの「いいえ」選択時に呼ばれる。
+        function onConfirmNo() {
+            dialog.close();
         }
 
         initGame();
