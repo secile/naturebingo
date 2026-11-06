@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>明石公園発見ビンゴ</title>
+    <title>明石めぐりフォトラリー</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -158,11 +158,11 @@
 </head>
 <body>
 
-    <h1>明石公園発見ビンゴ</h1>
+    <h1>明石めぐりフォトラリー</h1>
     <p>マスをタップしてお題にあった写真を撮ろう。<br>
     ９マスのコンプリートを目指そう！</p>
 
-    <div id="bingo-message">🎉 ビンゴ達成！おめでとう！ 🎉</div>
+    <div id="bingo-message">🎉 コンプリート！おめでとう！ 🎉</div>
 
     <!-- 3x3のビンゴボード -->
     <div class="bingo-board" id="board"></div>
@@ -346,7 +346,7 @@
             ctx.fillStyle = '#2e7d32';
             ctx.font = 'bold 50px serif';
             ctx.textAlign = 'center';
-            ctx.fillText('明石公園発見ビンゴ', width / 2, 80);
+            ctx.fillText('明石めぐりフォトラリー', width / 2, 80);
 
             // 3. グリッドの描画設定
             const padding = 100;
@@ -448,7 +448,7 @@
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
-                            title: '明石公園発見ビンゴ',
+                            title: '明石めぐりフォトラリー',
                             text: '明石公園と魚の棚に行ったよ！',
                             files: [file],
                         });
