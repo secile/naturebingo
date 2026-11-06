@@ -182,18 +182,23 @@
     <canvas id="share-canvas" width="1200" height="1350"></canvas>
 
     <script>
-        // グループAのワード候補（例：植物や自然物など）
+        // グループAのワード候補
         const groupAWords = [
             "どんぐり", "赤い花", "黄色い花", "落ち葉", 
             "木の幹", "松ぼっくり", "雲", "水たまり"
         ];
 
-        // グループBのワード候補（例：生き物や小さめの自然など）
+        // グループBのワード候補
         const groupBWords = [
             "猫", "犬", "鳥", "虫", 
             "石ころ", "クモの巣", "蝶"
         ];
 
+        // グループCのワード候補。1つだけ使われる。
+        const groupCWords = [
+            "ケンサキミヨシ"
+        ];
+        
         let boardData = []; 
         let activeCellIndex = null; 
 
@@ -208,10 +213,14 @@
             const shuffledA = [...groupAWords].sort(() => 0.5 - Math.random());
             const selectedA = shuffledA.slice(0, 4);
 
-            // グループBからランダムに5つ選ぶ（四隅と中央の5マス用）
+            // グループBからランダムに4つ選ぶ（四隅の4マス用）
             const shuffledB = [...groupBWords].sort(() => 0.5 - Math.random());
-            const selectedB = shuffledB.slice(0, 5);
+            const selectedB = shuffledB.slice(0, 4);
 
+            // グループCから1つ選ぶ（中心のマス用）
+            const shuffledC = [...groupCWords].sort(() => 0.5 - Math.random());
+            const selectedC = shuffledC.slice(0, 1);
+            
             // 3x3（全9マス）の配列をあらかじめ作成
             boardData = new Array(9);
 
@@ -225,11 +234,21 @@
                 };
             });
 
-            // 残りのマス（0, 2, 4, 6, 8）にグループBを割り当て
-            const indicesB = [0, 2, 4, 6, 8];
+            // 残りのマス（0, 2, 6, 8）にグループBを割り当て
+            const indicesB = [0, 2, 6, 8];
             indicesB.forEach((cellIndex, i) => {
                 boardData[cellIndex] = {
                     word: selectedB[i],
+                    image: null,
+                    completed: false
+                };
+            });
+            
+            // 中心のマス（4）にグループCを割り当て
+            const indicesC = [4];
+            indicesC.forEach((cellIndex, i) => {
+                boardData[cellIndex] = {
+                    word: selectedC[i],
                     image: null,
                     completed: false
                 };
